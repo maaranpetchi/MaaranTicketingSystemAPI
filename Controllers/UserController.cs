@@ -2,6 +2,7 @@
 using MaaranTicketingSystemAPI.Helpers;
 using MaaranTicketingSystemAPI.Models;
 using MaaranTicketingSystemAPI.Models.Dto;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -168,6 +169,40 @@ namespace MaaranTicketingSystemAPI.Controllers
                 throw new SecurityTokenException("this is invalid Token");
             return principal;
         }
+        [HttpPost("refresh")]
+        public async Task<IActionResult>Refresh(TokenApiDto tokenApiDto)
+        {
+            if (tokenApiDto is null)
+                return BadRequest("Invalid Client Request");
+            string accessToken = tokenApiDto.AccessToken;
+            string refreshToken = tokenApiDto.RefreshToken;
+            var principal = GetPrincipleFromExpiredToken(accessToken);
+            var username = principal.Identity.Name;
+            var user = await _authContext.Users.FirstOrDefaultAsync(u => u.username == username);
+            if (user is null || user.RefreshToken != refreshToken || user.RefreshTokenExpiryTime <= DateTime.Now)
+                return BadRequest("Invalid Request");
+            var newAccessToken = CreateJwt(user);
+            var newRefreshToken = CreateRefreshToken();
+            user.RefreshToken = newRefreshToken;
+            user.RefreshTokenExpiryTime = DateTime.Now.AddDays(5);
+            await _authContext.SaveChangesAsync();
+            return Ok(new TokenApiDto()
+            { 
+            AccessToken = newAccessToken,
+            RefreshToken = newRefreshToken,
+            });
 
+        }
+
+        [HttpPost("logout")]
+        [Authorize] // Ensure only authenticated users can log out
+        public IActionResult Logout()
+        {
+            // Additional logout logic can be added here
+            // For example, you might want to revoke the JWT token on the server-side
+            // Or perform any other necessary tasks
+
+            return Ok(new { message = "Logout successful" });
+        }
     }
 }
