@@ -39,14 +39,14 @@ namespace MaaranTicketingSystemAPI.Controllers
             var user = await _authContext.Users.FirstOrDefaultAsync(x => x.username == userObj.username);
             if (user == null)
             {
-                return Ok(new {Success=false, Message = "User Not Found!" });
+                return Ok(new { Success = false, Message = "User Not Found!" });
             }
-           if(!PasswordHasher.VerifyPassword(userObj.password,user.password))
+            if (!PasswordHasher.VerifyPassword(userObj.password, user.password))
             {
                 return Ok(new { Message = "Password is incorrect" });
             }
-            
-            
+
+
             user.Token = CreateJwt(user);
             var newAccessToken = user.Token;
             var newRefreshToken = CreateRefreshToken();
@@ -56,7 +56,7 @@ namespace MaaranTicketingSystemAPI.Controllers
             {
                 AccessToken = newAccessToken,
                 RefreshToken = newRefreshToken,
-                Message ="Login Success"
+                Message = "Login Success"
             });
         }
 
@@ -68,17 +68,17 @@ namespace MaaranTicketingSystemAPI.Controllers
             if (userObj == null)
                 return BadRequest();
 
-            if(await CheckUserNameExistAsync(userObj.username)) 
+            if (await CheckUserNameExistAsync(userObj.username))
             {
                 return Ok(new { Message = "UserName Already Exists" });
-            
+
             }
-            
-            
-            if (userObj!=null)
+
+
+            if (userObj != null)
             {
                 userObj.password = PasswordHasher.HashPassword(userObj.password);
-                userObj.Role = "user";
+                //userObj.Role = " ";
                 userObj.Token = "";
                 await _authContext.Users.AddAsync(userObj);
                 await _authContext.SaveChangesAsync();
@@ -91,12 +91,13 @@ namespace MaaranTicketingSystemAPI.Controllers
                     userObj
                 });
             }
-            else {
+            else
+            {
                 return Ok(new
                 {
                     Success = false,
                     Message = "user Not Register",
-                   
+
                 });
 
             }
@@ -104,16 +105,20 @@ namespace MaaranTicketingSystemAPI.Controllers
 
 
         [HttpGet("getAllUsers")]
-        public async Task <ActionResult<User>> GetAllUsers()
+        public async Task<ActionResult<User>> GetAllUsers()
+            //var usersWithDepartments = _context.Users
+            //.Include(u => u.Department)
+            //.ToList();
+
         {
             return Ok(await _authContext.Users.ToListAsync());
         }
         [ApiExplorerSettings(IgnoreApi = true)]
         private Task<bool> CheckUserNameExistAsync(string username)
-       => _authContext.Users.AnyAsync(x=>x.username == username);
+       => _authContext.Users.AnyAsync(x => x.username == username);
 
 
-        [ApiExplorerSettings(IgnoreApi =true)]
+        [ApiExplorerSettings(IgnoreApi = true)]
         private string CreateJwt(User user)
         {
             var jwtTokenHandler = new JwtSecurityTokenHandler();
@@ -140,9 +145,9 @@ namespace MaaranTicketingSystemAPI.Controllers
         public string CreateRefreshToken()
         {
             var tokenBytes = RandomNumberGenerator.GetBytes(64);
-            var refreshToken = Convert.ToBase64String(tokenBytes);  
-            var tokenInUser = _authContext.Users.Any(a=>a.RefreshToken == refreshToken);   
-            if(tokenInUser)
+            var refreshToken = Convert.ToBase64String(tokenBytes);
+            var tokenInUser = _authContext.Users.Any(a => a.RefreshToken == refreshToken);
+            if (tokenInUser)
             {
                 return CreateRefreshToken();
             }
@@ -158,19 +163,19 @@ namespace MaaranTicketingSystemAPI.Controllers
                 ValidateAudience = false,
                 ValidateIssuer = false,
                 ValidateIssuerSigningKey = true,
-               IssuerSigningKey=new  SymmetricSecurityKey(key),
-               ValidateLifetime = false,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateLifetime = false,
             };
             var tokenHandler = new JwtSecurityTokenHandler();
             SecurityToken securityToken;
-            var principal = tokenHandler.ValidateToken(token,tokenValidationParameters,out securityToken);
+            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out securityToken);
             var jwtSecurityToken = securityToken as JwtSecurityToken;
             if (jwtSecurityToken != null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
                 throw new SecurityTokenException("this is invalid Token");
             return principal;
         }
         [HttpPost("refresh")]
-        public async Task<IActionResult>Refresh(TokenApiDto tokenApiDto)
+        public async Task<IActionResult> Refresh(TokenApiDto tokenApiDto)
         {
             if (tokenApiDto is null)
                 return BadRequest("Invalid Client Request");
@@ -187,9 +192,9 @@ namespace MaaranTicketingSystemAPI.Controllers
             user.RefreshTokenExpiryTime = DateTime.Now.AddDays(5);
             await _authContext.SaveChangesAsync();
             return Ok(new TokenApiDto()
-            { 
-            AccessToken = newAccessToken,
-            RefreshToken = newRefreshToken,
+            {
+                AccessToken = newAccessToken,
+                RefreshToken = newRefreshToken,
             });
 
         }
@@ -198,11 +203,17 @@ namespace MaaranTicketingSystemAPI.Controllers
         [Authorize] // Ensure only authenticated users can log out
         public IActionResult Logout()
         {
-            // Additional logout logic can be added here
-            // For example, you might want to revoke the JWT token on the server-side
-            // Or perform any other necessary tasks
-
+         
             return Ok(new { message = "Logout successful" });
+        }
+
+        ////////////////////////////////TICKET-CREATION/////////////////////////
+
+        [HttpGet("getAllDepartments")]
+        public async Task<IActionResult> GetDepartments()
+        {
+            var departments = await _authContext.Department.ToListAsync();
+            return Ok(departments);
         }
     }
 }

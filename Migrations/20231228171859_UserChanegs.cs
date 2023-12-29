@@ -4,22 +4,24 @@
 
 namespace MaaranTicketingSystemAPI.Migrations
 {
-    public partial class SecondCommit : Migration
+    public partial class UserChanegs : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameColumn(
-                name: "key",
-                table: "users",
-                newName: "Id");
+         
+            migrationBuilder.DropIndex(
+                name: "IX_users_Departmentid",
+                table: "users");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameColumn(
-                name: "Id",
+            migrationBuilder.CreateIndex(
+                name: "IX_users_Departmentid",
                 table: "users",
-                newName: "key");
+                column: "Departmentid");
+
+          
         }
     }
 }

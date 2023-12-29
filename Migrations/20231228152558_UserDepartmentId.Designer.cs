@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MaaranTicketingSystemAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20231220063536_RefereshToken")]
-    partial class RefereshToken
+    [Migration("20231228152558_UserDepartmentId")]
+    partial class UserDepartmentId
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -24,6 +24,22 @@ namespace MaaranTicketingSystemAPI.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
 
+            modelBuilder.Entity("MaaranTicketingSystemAPI.Models.Department", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+
+                    b.Property<string>("DepartmentName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Department", (string)null);
+                });
+
             modelBuilder.Entity("MaaranTicketingSystemAPI.Models.User", b =>
                 {
                     b.Property<int>("Id")
@@ -31,6 +47,9 @@ namespace MaaranTicketingSystemAPI.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+
+                    b.Property<int>("Departmentid")
+                        .HasColumnType("int");
 
                     b.Property<string>("RefreshToken")
                         .HasColumnType("nvarchar(max)");
@@ -42,6 +61,10 @@ namespace MaaranTicketingSystemAPI.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Token")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("emailId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("firstname")
@@ -60,7 +83,20 @@ namespace MaaranTicketingSystemAPI.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Departmentid");
+
                     b.ToTable("users", (string)null);
+                });
+
+            modelBuilder.Entity("MaaranTicketingSystemAPI.Models.User", b =>
+                {
+                    b.HasOne("MaaranTicketingSystemAPI.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("Departmentid")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Department");
                 });
 #pragma warning restore 612, 618
         }
